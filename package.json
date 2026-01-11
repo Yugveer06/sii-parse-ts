@@ -1,0 +1,68 @@
+{
+  "name": "sii-parse-ts",
+  "version": "1.0.0",
+  "description": "TypeScript type definitions and parser for ETS2 and ATS .sii save files",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf dist && rimraf \"test/**/*.js\" \"test/**/*.d.ts\" \"test/**/*.js.map\" \"test/**/*.d.ts.map\"",
+    "dev": "tsc --watch",
+    "example": "npm run build && node examples/basic-usage.js",
+    "example:ts": "npm run build && npx tsx examples/typescript-usage.ts",
+    "lint": "eslint src/**/*.ts test/**/*.ts examples/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts test/**/*.ts examples/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts test/**/*.ts examples/**/*.ts"
+  },
+  "keywords": [
+    "ets2",
+    "ats",
+    "euro-truck-simulator",
+    "american-truck-simulator",
+    "sii",
+    "parser",
+    "typescript",
+    "gaming",
+    "save-files",
+    "modding"
+  ],
+  "author": {
+    "name": "Yugveer Singh",
+    "url": "https://github.com/yugveer06"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yugveer06/ets2-ats-sii-types.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yugveer06/ets2-ats-sii-types/issues"
+  },
+  "homepage": "https://github.com/yugveer06/ets2-ats-sii-types#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.4",
+    "rimraf": "^5.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "license": "MIT"
+}
