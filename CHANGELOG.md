@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-16
+
+### Added
+
+- New `parseSiiFileStreaming()` function for parsing large SII files with reduced memory usage
+- New `parseSiiFileAuto()` function that automatically selects optimal parsing method based on file size
+- New `parseSiiChunked()` function for chunked processing support
+- Significantly improved parsing performance with optimized character-level processing
+- More efficient content validation with faster format detection
+
+### Changed
+
+- Rewritten parser core with character-level optimizations for better performance
+- Reduced memory allocations during parsing operations
+- Optimized regex usage with pre-compiled patterns
+
 ## [1.0.0] - 2026-01-09
 
 ### Added

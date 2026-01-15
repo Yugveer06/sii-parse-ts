@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   parseSii,
   parseSiiFile,
+  parseSiiChunked,
+  parseSiiAs,
   isValidSiiPath,
   isValidSiiContent,
   ProfileSii,
@@ -124,8 +126,8 @@ user_profile : _nameless.1234 {
     it('should reject empty or non-string content', () => {
       expect(isValidSiiContent('')).toBe(false);
       expect(isValidSiiContent('   ')).toBe(false);
-      expect(isValidSiiContent(null as unknown)).toBe(false);
-      expect(isValidSiiContent(undefined as unknown)).toBe(false);
+      expect(isValidSiiContent(null)).toBe(false);
+      expect(isValidSiiContent(undefined)).toBe(false);
     });
 
     it('should reject binary content with non-printable characters', () => {
@@ -191,6 +193,32 @@ test_data : _nameless.5678 {
       expect(data.null_value).toBe(null);
       expect(data.vector).toEqual([1.0, 2.0, 3.0]);
       expect(data.array_indexed).toEqual(['first', 'second']);
+    });
+  });
+
+  describe('New API Functions', () => {
+    const testContent = `SiiNunit
+{
+user_profile : _nameless.1234 {
+ profile_name: "Test Profile"
+ company_name: "Test Company"
+ cached_experience: 1000
+}
+}`;
+
+    it('should parse with type assertion helpers', () => {
+      const result = parseSiiAs<ProfileSii>(testContent);
+      expect(result.SiiNunit.user_profile[0].profile_name).toBe('Test Profile');
+    });
+
+    it('should parse with chunked processing', () => {
+      const result = parseSiiChunked<ProfileSii>(testContent);
+      expect(result.SiiNunit.user_profile[0].profile_name).toBe('Test Profile');
+    });
+
+    it('should parse with chunked processing with options', () => {
+      const result = parseSiiChunked<ProfileSii>(testContent, { chunkSize: 1024 });
+      expect(result.SiiNunit.user_profile[0].profile_name).toBe('Test Profile');
     });
   });
 });
