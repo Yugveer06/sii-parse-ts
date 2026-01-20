@@ -17,7 +17,7 @@ export interface UserProfile {
   cached_experience: number;
   cached_distance: number;
   user_data: (number | string)[];
-  active_mods: number;
+  active_mods: 0 | string[];
   customization: number;
   cached_stats: number[];
   cached_discovery: number[];
