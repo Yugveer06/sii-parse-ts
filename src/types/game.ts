@@ -547,7 +547,7 @@ export interface MailCtrl {
 }
 
 export interface MailDef {
-  id: number;
+  id: string;
   mail_text_ref: string;
   param_keys: 0 | string[];
   param_values: 0 | string[];

@@ -532,5 +532,54 @@ test : _nameless.1 {
       const items = unit['test'] as Array<Record<string, unknown>>;
       expect(items[0]['value']).toBe(1);
     });
+
+    it('should handle braces inside quoted strings during validation', () => {
+      const content = `SiiNunit
+{
+test : _nameless.1 {
+ description: "some {curly} braces"
+}
+}`;
+
+      expect(isValidSiiContent(content)).toBe(true);
+      const result = parseSii(content);
+      const unit = (result as Record<string, unknown>)['SiiNunit'] as Record<string, unknown>;
+      const items = unit['test'] as Array<Record<string, unknown>>;
+      expect(items[0]['description']).toBe('some {curly} braces');
+    });
+
+    it('should parse uppercase IEEE 754 hex floats', () => {
+      const content = `SiiNunit
+{
+test : _nameless.1 {
+ wear: &3F800000
+}
+}`;
+
+      const result = parseSii(content);
+      const unit = (result as Record<string, unknown>)['SiiNunit'] as Record<string, unknown>;
+      const items = unit['test'] as Array<Record<string, unknown>>;
+      // &3F800000 = 1.0 in IEEE 754 (uppercase)
+      expect(items[0]['wear']).toBeCloseTo(1.0, 5);
+    });
+
+    it('should parse mixed-case IEEE 754 hex floats', () => {
+      const content = `SiiNunit
+{
+test : _nameless.1 {
+ wear: &3f800000
+ wear2: &3F800000
+ wear3: &3f80Ab00
+}
+}`;
+
+      const result = parseSii(content);
+      const unit = (result as Record<string, unknown>)['SiiNunit'] as Record<string, unknown>;
+      const items = unit['test'] as Array<Record<string, unknown>>;
+      expect(items[0]['wear']).toBeCloseTo(1.0, 5);
+      expect(items[0]['wear2']).toBeCloseTo(1.0, 5);
+      // &3f80Ab00 should parse consistently regardless of case
+      expect(typeof items[0]['wear3']).toBe('number');
+    });
   });
 });

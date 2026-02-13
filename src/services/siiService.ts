@@ -241,7 +241,7 @@ function parseValue(raw: string): SiiValue {
     }
     if (isAllHex) {
       try {
-        return hexToFloat32(raw.slice(1).toLowerCase());
+        return hexToFloat32(raw.slice(1));
       } catch {
         return raw;
       }
@@ -312,20 +312,19 @@ export function isValidSiiContent(input: string): boolean {
     if (code < CH_TAB || (code > CH_CR && code < CH_SPACE) || code > 126) return false;
   }
 
-  // Must contain SiiNunit
-  if (
-    input.indexOf('SiiNunit') === -1 &&
-    input.indexOf('SIINUNIT') === -1 &&
-    input.indexOf('siiNunit') === -1
-  ) {
-    // Fallback to case-insensitive check
-    if (!/SiiNunit/i.test(input)) return false;
-  }
+  // Must contain SiiNunit (case-insensitive)
+  if (!/SiiNunit/i.test(input)) return false;
 
-  // Brace balance check
+  // Brace balance check (skip characters inside quoted strings)
   let braceCount = 0;
+  let inQuote = false;
   for (let i = 0; i < input.length; i++) {
     const c = input.charCodeAt(i);
+    if (c === CH_QUOTE) {
+      inQuote = !inQuote;
+      continue;
+    }
+    if (inQuote) continue;
     if (c === CH_LBRACE) braceCount++;
     else if (c === CH_RBRACE) braceCount--;
     if (braceCount < 0) return false;
@@ -532,9 +531,10 @@ export async function parseSiiFile<T = SiiObject>(filePath: string): Promise<T> 
 // ─── Streaming Parser ────────────────────────────────────────────────────────
 
 /**
- * Parses large SII files using streaming for reduced memory pressure.
- * Uses a 256KB high-water mark and processes the file in a streaming fashion,
- * building the result incrementally instead of buffering the entire file.
+ * Parses large SII files using streamed file reading.
+ * Uses a 256KB high-water mark to read the file in chunks, reducing peak
+ * memory from the initial file I/O compared to `readFile`. The chunks are
+ * concatenated and parsed after the stream ends.
  * Recommended for files > 10MB.
  */
 export async function parseSiiFileStreaming(filePath: string): Promise<SiiObject>;
@@ -654,24 +654,18 @@ export function stringifySii(data: any, options?: StringifyOptions): string {
   if (includeWrapper && 'SiiNunit' in data) {
     lines.push('SiiNunit');
     lines.push('{');
-    stringifyBlock(data['SiiNunit'] as SiiObject, indent, lineEnding, lines, 0);
+    stringifyBlock(data['SiiNunit'] as SiiObject, indent, lines, 0);
     lines.push('}');
     lines.push('');
     return lines.join(lineEnding);
   }
 
   // If no SiiNunit wrapper, just dump the top-level
-  stringifyBlock(data as SiiObject, indent, lineEnding, lines, 0);
+  stringifyBlock(data as SiiObject, indent, lines, 0);
   return lines.join(lineEnding);
 }
 
-function stringifyBlock(
-  obj: SiiObject,
-  indent: string,
-  lineEnding: string,
-  lines: string[],
-  depth: number
-): void {
+function stringifyBlock(obj: SiiObject, indent: string, lines: string[], depth: number): void {
   const prefix = indent.repeat(depth);
   const innerPrefix = indent.repeat(depth + 1);
 
@@ -695,7 +689,7 @@ function stringifyBlock(
       // Nested anonymous block
       lines.push(`${prefix}${key}`);
       lines.push(`${prefix}{`);
-      stringifyBlock(value as SiiObject, indent, lineEnding, lines, depth + 1);
+      stringifyBlock(value as SiiObject, indent, lines, depth + 1);
       lines.push(`${prefix}}`);
     } else {
       writeProperty(key, value as SiiValue, prefix, lines);
