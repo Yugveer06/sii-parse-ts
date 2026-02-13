@@ -1,4 +1,13 @@
-import { parseSii, ProfileSii, GameSii, isValidSiiContent } from '../src/index';
+import {
+  parseSii,
+  stringifySii,
+  getBlock,
+  getBlocks,
+  findBlockById,
+  ProfileSii,
+  GameSii,
+  isValidSiiContent,
+} from '../src/index';
 
 // Example 1: Type-safe profile parsing
 console.log('=== Example 1: Type-safe Profile Parsing ===');
@@ -54,6 +63,18 @@ player : _nameless.player.1 {
  hq_city: "berlin"
  driving_time: 72000
 }
+
+vehicle : _nameless.truck.1 {
+ odometer: 125000
+ fuel_relative: 0.82
+ license_plate: "AB 1234"
+}
+
+vehicle : _nameless.truck.2 {
+ odometer: 340000
+ fuel_relative: 0.45
+ license_plate: "CD 5678"
+}
 }`;
 
 try {
@@ -72,8 +93,47 @@ try {
   console.error('Game save parse error:', error);
 }
 
-// Example 3: Error handling for encrypted files
-console.log('\n=== Example 3: Error Handling ===');
+// Example 3: Query Helpers
+console.log('\n=== Example 3: Query Helpers ===');
+try {
+  const parsed = parseSii(gameContent);
+
+  // Get a single block
+  const economy = getBlock(parsed, 'SiiNunit', 'economy');
+  console.log(`Economy game_time: ${economy?.['game_time']}`);
+
+  // Get all blocks of a type
+  const vehicles = getBlocks(parsed, 'SiiNunit', 'vehicle');
+  console.log(`Found ${vehicles.length} vehicles:`);
+  for (const v of vehicles) {
+    console.log(`  - ${v['id']}: ${v['odometer']} km, plate: ${v['license_plate']}`);
+  }
+
+  // Find by ID
+  const truck2 = findBlockById(parsed, 'vehicle', '_nameless.truck.2');
+  console.log(`Truck 2 fuel: ${truck2?.['fuel_relative']}`);
+} catch (error) {
+  console.error('Query error:', error);
+}
+
+// Example 4: Serialization (round-trip)
+console.log('\n=== Example 4: Serialization ===');
+try {
+  const parsed = parseSii<ProfileSii>(profileContent);
+  const serialized = stringifySii(parsed);
+  console.log('Serialized output:');
+  console.log(serialized);
+
+  // Verify round-trip
+  const reparsed = parseSii<ProfileSii>(serialized);
+  const match = reparsed.SiiNunit.user_profile[0].profile_name === 'Jane Smith';
+  console.log(`Round-trip match: ${match ? '✓' : '✗'}`);
+} catch (error) {
+  console.error('Serialization error:', error);
+}
+
+// Example 5: Error handling for encrypted files
+console.log('\n=== Example 5: Error Handling ===');
 const encryptedContent = 'SCSC\x00\x01\x02\x03...'; // Simulated encrypted content
 const binaryContent = 'BSII\x00\x01\x02\x03...'; // Simulated binary content
 
@@ -82,13 +142,13 @@ console.log('Binary file valid:', isValidSiiContent(binaryContent));
 
 try {
   parseSii(encryptedContent);
-} catch (error) {
-  console.log('Expected error for encrypted file:', error.message);
+} catch (error: unknown) {
+  console.log('Expected error for encrypted file:', (error as Error).message);
 }
 
-// Example 4: Async file parsing
+// Example 6: Async file parsing
 async function parseFileExample() {
-  console.log('\n=== Example 4: Async File Parsing ===');
+  console.log('\n=== Example 6: Async File Parsing ===');
 
   try {
     // This would work if the file exists

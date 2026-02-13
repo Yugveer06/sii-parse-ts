@@ -1,6 +1,6 @@
 # SII Parse TypeScript
 
-TypeScript library for parsing Euro Truck Simulator 2 and American Truck Simulator `.sii` save files with complete type definitions.
+TypeScript library for parsing and serializing Euro Truck Simulator 2 and American Truck Simulator `.sii` save files with complete type definitions.
 
 ## Installation
 
@@ -16,6 +16,10 @@ import {
   parseSiiFile,
   parseSiiFileAuto,
   parseSiiFileStreaming,
+  stringifySii,
+  getBlock,
+  getBlocks,
+  findBlockById,
   ProfileSii,
   GameSii,
 } from 'sii-parse-ts';
@@ -44,6 +48,14 @@ const largeSave = await parseSiiFileStreaming<GameSii>('./large-save.sii');
 
 ## Performance Features
 
+### Zero-Regex Hot Paths
+
+The parser uses hand-written character-level scanners for all hot-path operations (key-value parsing, block detection, identifier matching), eliminating regex overhead in the main parse loop. Only rarely-used patterns (hex integer detection, tuple matching) use pre-compiled regex.
+
+### Buffer-Free Float Decoding
+
+IEEE 754 hex float values (`&XXXXXXXX`) are decoded using `DataView` instead of Node.js `Buffer`, reducing memory allocations and improving performance.
+
 ### Automatic Optimization
 
 The library automatically chooses the best parsing method:
@@ -62,6 +74,57 @@ For very large SII files, use streaming to reduce memory usage:
 const result = await parseSiiFileStreaming('./large-save-file.sii');
 ```
 
+## Serialization (Write Back)
+
+Convert parsed SII objects back to valid SII text format:
+
+```typescript
+import { parseSii, stringifySii, GameSii } from 'sii-parse-ts';
+
+const parsed = parseSii<GameSii>(content);
+
+// ... modify the parsed data ...
+
+// Serialize back to SII format
+const output = stringifySii(parsed);
+
+// With custom options
+const formatted = stringifySii(parsed, {
+  indent: '  ', // Two-space indent
+  lineEnding: '\r\n', // Windows line endings
+});
+```
+
+## Query Helpers
+
+Navigate parsed SII data with type-safe helper functions:
+
+```typescript
+import { parseSii, getBlock, getBlocks, findBlockById, GameSii } from 'sii-parse-ts';
+
+const data = parseSii(content);
+
+// Get the first block of a type
+const economy = getBlock(data, 'SiiNunit', 'economy');
+
+// Get all blocks of a type
+const vehicles = getBlocks(data, 'SiiNunit', 'vehicle');
+
+// Find a specific block by its ID
+const truck = findBlockById(data, 'vehicle', 'truck.my_truck');
+```
+
+## Include File Resolution
+
+For SII files that use `@include` directives:
+
+```typescript
+import { parseSiiFileWithIncludes } from 'sii-parse-ts';
+
+// Automatically resolves @include "path/to/other.sii" directives
+const result = await parseSiiFileWithIncludes('./game.sii');
+```
+
 ## API
 
 ### Core Functions
@@ -74,7 +137,21 @@ const result = await parseSiiFileStreaming('./large-save-file.sii');
 
 - `parseSiiFileStreaming<T>(path: string)` - Parse large SII files (>10MB) with streaming for reduced memory usage
 - `parseSiiFileAuto<T>(path: string)` - Automatically choose optimal parsing method based on file size
-- `parseSiiChunked<T>(content: string, options?)` - Parse with chunked processing (future-ready API)
+- `parseSiiChunked<T>(content: string, options?)` - Parse with chunked processing
+
+### Serialization
+
+- `stringifySii(data, options?)` - Serialize parsed SII object back to SII text format
+
+### Query Helpers
+
+- `getBlock<T>(data, ...path)` - Get the first block at a path
+- `getBlocks<T>(data, ...path)` - Get all blocks at a path
+- `findBlockById<T>(data, blockType, id)` - Find a specific block by its ID
+
+### Include Resolution
+
+- `parseSiiFileWithIncludes<T>(path: string)` - Parse SII file resolving `@include` directives
 
 ### Type-Safe Helpers
 
@@ -93,6 +170,10 @@ const result = await parseSiiFileStreaming('./large-save-file.sii');
 - `GameSii` - Game save state
 - `ControlsSii` - Input configuration
 - `InfoSii` - Save metadata
+- `SiiObject` - Generic parsed SII object
+- `SiiValue` - Union of all possible SII values
+- `SiiPrimitive` - Primitive SII values (string | number | boolean | null)
+- `StringifyOptions` - Options for `stringifySii()`
 
 ## Supported Formats
 

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-12
+
+### Added
+
+- **`stringifySii()` serializer** — serialize parsed SII objects back to valid SII text format with configurable indentation and line endings
+- **Query helpers** — `getBlock()`, `getBlocks()`, and `findBlockById()` for navigating parsed SII structures
+- **`@include` directive support** — `parseSiiFileWithIncludes()` resolves include directives recursively
+- **`StringifyOptions` interface** for controlling serialization output format
+
+### Changed
+
+- **Eliminated `Buffer` dependency from parser** — IEEE 754 hex float decoding now uses `DataView`/`Uint8Array` instead of `Buffer.from().readFloatBE()`, reducing memory allocations
+- **Replaced regex with manual char-level parsers** for the three hot-path patterns (key-value lines, named blocks, standalone identifiers), significantly reducing regex overhead in the parse loop
+- **Improved streaming parser** — now reads directly as UTF-8 strings instead of buffering `Buffer` objects and concatenating them
+- **Optimized `isValidSiiContent()`** — fast path for `SiiNunit` detection using `indexOf()` before falling back to regex
+- **Expanded test suite** — from 18 tests to 39 tests covering serialization round-trips, query helpers, edge cases (nested tuples, IEEE 754 floats, pre-allocated arrays, comments, dotted keys, and more)
+
 ## [1.1.0] - 2026-01-16
 
 ### Added
